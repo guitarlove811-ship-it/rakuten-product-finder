@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>楽天スイーツランキング</title>
+
+  <meta
+    name="description"
+    content="楽天市場のスイーツ・お菓子ランキングから注目商品を紹介します。"
+  >
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Hiragino Kaku Gothic ProN",
+        "Yu Gothic",
+        sans-serif;
+
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #eeeeee;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: auto;
+      padding: 20px 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: #666666;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .pr {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 4px 8px;
+      border: 1px solid #bbbbbb;
+      border-radius: 4px;
+      font-size: 12px;
+      background: #ffffff;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 24px 16px 50px;
+    }
+
+    .info {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .update {
+      color: #777777;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 10px;
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.06);
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    .image-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #f2f2f2;
+    }
+
+    .image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .rank {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+
+      padding: 7px 10px;
+      border-radius: 999px;
+
+      background: rgba(255,255,255,0.95);
+
+      font-weight: bold;
+      font-size: 14px;
+
+      box-shadow:
+        0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .card-body {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .shop {
+      color: #777777;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .name {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.55;
+      margin-bottom: 10px;
+
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .review {
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+
+    .price {
+      font-size: 22px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .shipping {
+      display: inline-block;
+      width: fit-content;
+
+      margin-bottom: 14px;
+
+      padding: 3px 7px;
+
+      border-radius: 4px;
+
+      background: #f2f2f2;
+
+      font-size: 12px;
+    }
+
+    .button {
+      display: block;
+
+      margin-top: auto;
+
+      padding: 13px 10px;
+
+      text-align: center;
+
+      text-decoration: none;
+
+      border-radius: 8px;
+
+      background: #bf0000;
+      color: #ffffff;
+
+      font-weight: bold;
+
+      transition: opacity 0.2s;
+    }
+
+    .button:hover {
+      opacity: 0.85;
+    }
+
+    .error {
+      padding: 30px;
+      background: #ffffff;
+      border-radius: 12px;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .retry {
+      margin-top: 15px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    footer {
+      background: #ffffff;
+      border-top: 1px solid #eeeeee;
+      margin-top: 30px;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: auto;
+      padding: 28px 16px;
+      text-align: center;
+      font-size: 12px;
+      color: #666666;
+      line-height: 1.8;
+    }
+
+    .rakuten-credit {
+      margin-top: 18px;
+    }
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      h1 {
+        font-size: 22px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        flex-direction: row;
+      }
+
+      .image-wrap {
+        width: 38%;
+        aspect-ratio: 1 / 1;
+        flex-shrink: 0;
+      }
+
+      .card-body {
+        width: 62%;
+        padding: 12px;
+      }
+
+      .name {
+        font-size: 14px;
+        -webkit-line-clamp: 2;
+      }
+
+      .price {
+        font-size: 19px;
+      }
+
+      .button {
+        padding: 11px 7px;
+        font-size: 13px;
+      }
+
+      .rank {
+        top: 6px;
+        left: 6px;
+        padding: 5px 8px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>
+      楽天スイーツランキング
+    </h1>
+
+    <div class="subtitle">
+      楽天市場の「スイーツ・お菓子」
+      リアルタイムランキングから
+      注目商品を紹介しています。
+    </div>
+
+    <div class="pr">
+      PR
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="info">
+    当サイトは楽天アフィリエイトを利用しています。
+    商品価格・在庫・ポイント等は変更される場合があります。
+    最新情報は楽天市場の商品ページでご確認ください。
+
+    <div
+      id="updatedAt"
+      class="update"
+    ></div>
+  </div>
+
+  <div
+    id="loading"
+    class="loading"
+  >
+    ランキングを読み込んでいます…
+  </div>
+
+  <div
+    id="products"
+    class="grid"
+  ></div>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+
+    当サイトは個人が運営する商品紹介サイトであり、
+    楽天グループ株式会社が運営するサイトではありません。
+
+    <div class="rakuten-credit">
+
+      <!-- Rakuten Web Services Attribution Snippet FROM HERE -->
+      <a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a>
+      <!-- Rakuten Web Services Attribution Snippet TO HERE -->
+
+    </div>
+
+  </div>
+</footer>
+
+<script>
+
+const API_URL =
+  "https://rakuten-product-finder-api.onrender.com/api/products";
+
+
+function formatPrice(price) {
+  return new Intl.NumberFormat(
+    "ja-JP"
+  ).format(price);
+}
+
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+
+function makeReview(product) {
+
+  if (
+    !product.reviewCount ||
+    !product.reviewAverage
+  ) {
+    return "レビュー情報なし";
+  }
+
+  return (
+    "★ " +
+    Number(
+      product.reviewAverage
+    ).toFixed(2) +
+    "（" +
+    formatPrice(
+      product.reviewCount
+    ) +
+    "件）"
+  );
+}
+
+
+function createCard(product) {
+
+  const card =
+    document.createElement(
+      "article"
+    );
+
+  card.className =
+    "card";
+
+  const shipping =
+    product.freeShipping
+      ? "送料無料"
+      : "送料は商品ページで確認";
+
+  card.innerHTML = `
+    <div class="image-wrap">
+
+      <img
+        src="${escapeHtml(product.image)}"
+        alt="${escapeHtml(product.name)}"
+        loading="lazy"
+      >
+
+      <div class="rank">
+        ${escapeHtml(product.rank)}位
+      </div>
+
+    </div>
+
+    <div class="card-body">
+
+      <div class="shop">
+        ${escapeHtml(product.shopName)}
+      </div>
+
+      <div class="name">
+        ${escapeHtml(product.name)}
+      </div>
+
+      <div class="review">
+        ${escapeHtml(makeReview(product))}
+      </div>
+
+      <div class="price">
+        ${formatPrice(product.price)}円
+      </div>
+
+      <div class="shipping">
+        ${escapeHtml(shipping)}
+      </div>
+
+      <a
+        class="button"
+        href="${escapeHtml(product.url)}"
+        target="_blank"
+        rel="noopener noreferrer sponsored"
+      >
+        楽天市場で見る
+      </a>
+
+    </div>
+  `;
+
+  return card;
+}
+
+
+async function loadProducts() {
+
+  const loading =
+    document.getElementById(
+      "loading"
+    );
+
+  const container =
+    document.getElementById(
+      "products"
+    );
+
+  try {
+
+    loading.style.display =
+      "block";
+
+    container.innerHTML =
+      "";
+
+    const response =
+      await fetch(
+        API_URL,
+        {
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        "商品データを取得できませんでした"
+      );
+    }
+
+    const data =
+      await response.json();
+
+    if (
+      !Array.isArray(
+        data.products
+      ) ||
+      data.products.length === 0
+    ) {
+      throw new Error(
+        "商品データがありません"
+      );
+    }
+
+    loading.style.display =
+      "none";
+
+    data.products.forEach(
+      product => {
+
+        container.appendChild(
+          createCard(product)
+        );
+
+      }
+    );
+
+    const updated =
+      new Date(
+        data.updatedAt
+      );
+
+    document.getElementById(
+      "updatedAt"
+    ).textContent =
+      "最終取得：" +
+      updated.toLocaleString(
+        "ja-JP"
+      );
+
+  } catch (error) {
+
+    console.error(error);
+
+    loading.style.display =
+      "none";
+
+    container.innerHTML = `
+      <div class="error">
+        商品データの読み込みに失敗しました。<br>
+        無料サーバーの起動に時間がかかる場合があります。
+
+        <br>
+
+        <button
+          class="retry"
+          onclick="loadProducts()"
+        >
+          もう一度読み込む
+        </button>
+      </div>
+    `;
+  }
+}
+
+
+loadProducts();
+
+</script>
+
+</body>
+</html>
