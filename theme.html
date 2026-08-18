@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="p:domain_verify" content="5cecbfb82c6542c10dadebbd90a8f5fe">
+<title>楽天スイーツ テーマ別ランキング</title>
+<meta name="description" content="楽天市場のスイーツ・お菓子リアルタイムランキング上位商品を、価格・送料・レビュー・ポイントなどの切り口で紹介します。">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:#f7f7f7;color:#222}
+a{color:inherit}
+header{background:#fff;border-bottom:1px solid #eee}
+.header-inner{max-width:1100px;margin:auto;padding:20px 16px}
+.eyebrow{font-size:12px;color:#777;margin-bottom:7px}
+h1{margin:0;font-size:27px;line-height:1.4}
+.subtitle{margin-top:8px;color:#666;font-size:14px;line-height:1.7}
+.pr{display:inline-block;margin-top:12px;padding:4px 8px;border:1px solid #bbb;border-radius:4px;font-size:12px;background:#fff}
+main{max-width:1100px;margin:auto;padding:24px 16px 50px}
+.theme-nav{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:18px}
+.theme-nav a{text-decoration:none;padding:9px 12px;border-radius:999px;background:#fff;border:1px solid #ddd;font-size:13px}
+.theme-nav a.active{border-color:#bf0000;font-weight:700;color:#a00000}
+.info{background:#fff;border-radius:12px;padding:16px;margin-bottom:20px;font-size:14px;line-height:1.8}
+.notice{margin-top:8px;color:#666;font-size:12px}
+.update{color:#777;font-size:13px;margin-top:8px}
+.count{margin:0 0 13px;color:#555;font-size:14px}
+.loading{text-align:center;padding:60px 10px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06);display:flex;flex-direction:column}
+.image-wrap{position:relative;width:100%;aspect-ratio:1/1;background:#f2f2f2}
+.image-wrap img{width:100%;height:100%;object-fit:contain}
+.rank,.theme-badge{position:absolute;top:10px;padding:7px 10px;border-radius:999px;font-weight:bold;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+.rank{left:10px;background:rgba(255,255,255,.95)}
+.theme-badge{right:10px;max-width:68%;background:rgba(191,0,0,.92);color:#fff}
+.card-body{padding:15px;display:flex;flex-direction:column;flex:1}
+.shop{color:#777;font-size:12px;margin-bottom:6px}
+.name{font-size:15px;font-weight:600;line-height:1.55;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.review,.meta{font-size:13px;margin-bottom:7px;line-height:1.5}
+.price{font-size:22px;font-weight:bold;margin-bottom:6px}
+.shipping{display:inline-block;width:fit-content;margin-bottom:14px;padding:3px 7px;border-radius:4px;background:#f2f2f2;font-size:12px}
+.button{display:block;margin-top:auto;padding:13px 10px;text-align:center;text-decoration:none;border-radius:8px;background:#bf0000;color:#fff;font-weight:bold}
+.empty,.error{grid-column:1/-1;padding:30px;background:#fff;border-radius:12px;text-align:center;line-height:1.9}
+.retry{margin-top:15px;padding:10px 18px;border:0;border-radius:7px;cursor:pointer}
+footer{background:#fff;border-top:1px solid #eee;margin-top:30px}
+.footer-inner{max-width:1100px;margin:auto;padding:28px 16px;text-align:center;font-size:12px;color:#666;line-height:1.9}
+.footer-links{margin-top:10px}.footer-links a{margin:0 7px}.rakuten-credit{margin-top:18px}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){h1{font-size:22px}.grid{grid-template-columns:1fr}.card{flex-direction:row}.image-wrap{width:38%;flex-shrink:0}.card-body{width:62%;padding:12px}.name{font-size:14px;-webkit-line-clamp:2}.price{font-size:19px}.button{padding:11px 7px;font-size:13px}.rank,.theme-badge{top:6px;font-size:10px;padding:4px 6px}.rank{left:6px}.theme-badge{right:6px}}
+</style>
+</head>
+<body>
+<header>
+<div class="header-inner">
+<div class="eyebrow">楽天スイーツランキング｜テーマ別セレクション</div>
+<h1 id="pageTitle">テーマ別ランキング</h1>
+<div class="subtitle" id="pageSubtitle"></div>
+<div class="pr">PR</div>
+</div>
+</header>
+
+<main>
+<nav class="theme-nav" aria-label="テーマを選ぶ">
+<a data-type="under3000" href="?type=under3000">3,000円以下</a>
+<a data-type="free-shipping" href="?type=free-shipping">送料無料</a>
+<a data-type="high-review" href="?type=high-review">高評価順</a>
+<a data-type="review-count" href="?type=review-count">口コミ多数順</a>
+<a data-type="point-rate" href="?type=point-rate">ポイント倍率順</a>
+<a data-type="realtime" href="?type=realtime">リアルタイム順位</a>
+</nav>
+
+<div class="info">
+当サイトは楽天アフィリエイトを利用しています。商品価格・在庫・ポイント等は変更される場合があります。最新情報は楽天市場の商品ページでご確認ください。
+<div class="notice" id="themeNotice"></div>
+<div id="updatedAt" class="update"></div>
+</div>
+<p class="count" id="resultCount"></p>
+<div id="loading" class="loading">ランキングを読み込んでいます…</div>
+<div id="products" class="grid"></div>
+</main>
+
+<footer><div class="footer-inner">
+当サイトは個人が運営する商品紹介サイトであり、楽天グループ株式会社が運営するサイトではありません。
+<div class="footer-links"><a href="./">総合ランキング</a><a href="./privacy.html">プライバシーポリシー</a></div>
+<div class="rakuten-credit"><a href="https://developers.rakuten.com/" target="_blank" rel="noopener noreferrer">Supported by Rakuten Developers</a></div>
+</div></footer>
+
+<script>
+const API_URL="https://rakuten-product-finder-api.onrender.com/api/products";
+function formatNumber(v){return new Intl.NumberFormat("ja-JP").format(Number(v||0))}
+function escapeHtml(t){return String(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+const THEMES={
+"under3000":{
+ title:"3,000円以下の人気スイーツ",
+ subtitle:"楽天スイーツ・お菓子のリアルタイムランキング上位商品から、3,000円以下の商品だけをピックアップ。",
+ notice:"※楽天市場全体の『3,000円以下ランキング』ではなく、取得時点のスイーツ・お菓子総合ランキング上位商品から条件に合う商品を抽出しています。",
+ filter:p=>Number(p.price)>0&&Number(p.price)<=3000,
+ sort:(a,b)=>Number(a.rank||999)-Number(b.rank||999),
+ badge:p=>`${formatNumber(p.price)}円`
+},
+"free-shipping":{
+ title:"送料無料の人気スイーツ",
+ subtitle:"楽天スイーツ・お菓子のリアルタイムランキング上位商品から、送料無料の商品をピックアップ。",
+ notice:"※取得時点のスイーツ・お菓子総合ランキング上位商品のうち、API上で送料無料と判定できた商品を掲載しています。",
+ filter:p=>Boolean(p.freeShipping),
+ sort:(a,b)=>Number(a.rank||999)-Number(b.rank||999),
+ badge:()=>"送料無料"
+},
+"high-review":{
+ title:"高評価の人気スイーツ",
+ subtitle:"楽天スイーツ・お菓子のリアルタイムランキング上位商品を、レビュー評価が高い順にチェック。",
+ notice:"※取得時点のスイーツ・お菓子総合ランキング上位商品のうち、レビュー評価が確認できる商品を評価順に並べています。",
+ filter:p=>Number(p.reviewAverage)>0&&Number(p.reviewCount)>0,
+ sort:(a,b)=>Number(b.reviewAverage||0)-Number(a.reviewAverage||0)||Number(b.reviewCount||0)-Number(a.reviewCount||0),
+ badge:p=>`★ ${Number(p.reviewAverage||0).toFixed(2)}`
+},
+"review-count":{
+ title:"口コミが多い人気スイーツ",
+ subtitle:"楽天スイーツ・お菓子のリアルタイムランキング上位商品を、レビュー件数が多い順にチェック。",
+ notice:"※取得時点のスイーツ・お菓子総合ランキング上位商品のうち、レビュー件数が確認できる商品を件数順に並べています。",
+ filter:p=>Number(p.reviewCount)>0,
+ sort:(a,b)=>Number(b.reviewCount||0)-Number(a.reviewCount||0),
+ badge:p=>`${formatNumber(p.reviewCount||0)}件`
+},
+"point-rate":{
+ title:"ポイント倍率で見る人気スイーツ",
+ subtitle:"楽天スイーツ・お菓子のリアルタイムランキング上位商品を、取得できたポイント倍率が高い順にチェック。",
+ notice:"※表示するポイント倍率はAPI取得時点の情報です。キャンペーンや会員条件などで実際の獲得ポイントは異なる場合があります。必ず楽天市場の商品ページでご確認ください。",
+ filter:p=>Number(p.pointRate)>0,
+ sort:(a,b)=>Number(b.pointRate||0)-Number(a.pointRate||0)||Number(a.rank||999)-Number(b.rank||999),
+ badge:p=>`ポイント${Number(p.pointRate||1)}倍`
+},
+"realtime":{
+ title:"楽天スイーツ リアルタイム人気ランキング",
+ subtitle:"楽天市場のスイーツ・お菓子リアルタイムランキング上位商品をそのままチェック。",
+ notice:"※表示順位はAPIから取得した時点のリアルタイムランキングです。",
+ filter:()=>true,
+ sort:(a,b)=>Number(a.rank||999)-Number(b.rank||999),
+ badge:p=>`${Number(p.rank||0)}位`
+}
+};
+function getThemeType(){const p=new URLSearchParams(location.search);const t=p.get("type")||"realtime";return THEMES[t]?t:"realtime"}
+function makeReview(p){if(!p.reviewCount||!p.reviewAverage)return"レビュー情報なし";return`★ ${Number(p.reviewAverage).toFixed(2)}（${formatNumber(p.reviewCount)}件）`}
+function createCard(p,theme){
+ const card=document.createElement("article");card.className="card";
+ const shipping=p.freeShipping?"送料無料":"送料は商品ページで確認";
+ card.innerHTML=`<div class="image-wrap"><img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}" loading="lazy"><div class="rank">総合 ${escapeHtml(p.rank)}位</div><div class="theme-badge">${escapeHtml(theme.badge(p))}</div></div><div class="card-body"><div class="shop">${escapeHtml(p.shopName)}</div><div class="name">${escapeHtml(p.name)}</div><div class="review">${escapeHtml(makeReview(p))}</div><div class="price">${formatNumber(p.price)}円</div><div class="meta">ポイント倍率：${escapeHtml(p.pointRate||1)}倍</div><div class="shipping">${escapeHtml(shipping)}</div><a class="button" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer sponsored">楽天市場で見る</a></div>`;
+ return card
+}
+function setHeader(type,theme){
+ document.getElementById("pageTitle").textContent=theme.title;
+ document.getElementById("pageSubtitle").textContent=theme.subtitle;
+ document.getElementById("themeNotice").textContent=theme.notice;
+ document.title=`${theme.title}｜楽天スイーツランキング`;
+ document.querySelector('meta[name="description"]').setAttribute("content",theme.subtitle);
+ document.querySelectorAll(".theme-nav a").forEach(a=>a.classList.toggle("active",a.dataset.type===type))
+}
+async function loadProducts(){
+ const type=getThemeType(),theme=THEMES[type];setHeader(type,theme);
+ const loading=document.getElementById("loading"),container=document.getElementById("products"),count=document.getElementById("resultCount");
+ try{
+  loading.style.display="block";container.innerHTML="";count.textContent="";
+  const response=await fetch(API_URL,{cache:"no-store"});
+  if(!response.ok)throw new Error("商品データを取得できませんでした");
+  const data=await response.json();
+  if(!Array.isArray(data.products)||data.products.length===0)throw new Error("商品データがありません");
+  const selected=data.products.filter(theme.filter).sort(theme.sort);
+  loading.style.display="none";
+  if(selected.length===0){
+    count.textContent="該当商品：0件";
+    container.innerHTML='<div class="empty">現在のランキング上位商品には、この条件に該当する商品がありません。<br>時間をおいて再度ご確認ください。</div>';
+  }else{
+    count.textContent=`現在の該当商品：${selected.length}件（取得したランキング上位${data.products.length}商品の中から選定）`;
+    selected.forEach(p=>container.appendChild(createCard(p,theme)));
+  }
+  const updated=new Date(data.updatedAt);
+  document.getElementById("updatedAt").textContent="最終取得："+updated.toLocaleString("ja-JP")
+ }catch(e){
+  console.error(e);loading.style.display="none";
+  container.innerHTML='<div class="error">商品データの読み込みに失敗しました。<br>無料サーバーの起動に時間がかかる場合があります。<br><button class="retry" onclick="loadProducts()">もう一度読み込む</button></div>'
+ }
+}
+loadProducts();
+</script>
+</body>
+</html>
