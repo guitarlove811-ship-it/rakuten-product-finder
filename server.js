@@ -1,4 +1,5 @@
 const http = require("http");
+const { handlePinterestDemo } = require("./pinterest-demo");
 
 const PORT = process.env.PORT || 10000;
 
@@ -318,6 +319,16 @@ const server =
           );
         }
 
+        return;
+      }
+
+      if (
+        await handlePinterestDemo(
+          req,
+          res,
+          { getProducts }
+        )
+      ) {
         return;
       }
 
