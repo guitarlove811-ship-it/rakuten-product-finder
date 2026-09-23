@@ -1,10 +1,13 @@
 const crypto = require("crypto");
 
 const OAUTH_URL = "https://www.pinterest.com/oauth/";
-const SCOPES = "boards:read,boards:write,pins:read,pins:write";
+
+const SCOPES =
+  "boards:read,boards:write,pins:read,pins:write";
+
 const BOARD_NAME =
   process.env.PINTEREST_DEMO_BOARD_NAME ||
-  "楽天お取り寄せスイーツランキング";
+  "Pinterest API Sandbox Demo";
 
 const DEMO_LINK =
   process.env.PINTEREST_DEMO_LINK ||
@@ -18,8 +21,8 @@ const API_BASE =
 const states = new Map();
 const sessions = new Map();
 
-function esc(v) {
-  return String(v ?? "")
+function esc(value) {
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -27,16 +30,26 @@ function esc(v) {
     .replaceAll("'", "&#039;");
 }
 
-function cookies(req) {
+function getCookies(req) {
   const out = {};
 
-  for (const part of (req.headers.cookie || "").split(";")) {
-    const i = part.indexOf("=");
+  for (
+    const part of
+    (req.headers.cookie || "").split(";")
+  ) {
+    const i =
+      part.indexOf("=");
 
     if (i > 0) {
-      out[part.slice(0, i).trim()] =
+      out[
+        part
+          .slice(0, i)
+          .trim()
+      ] =
         decodeURIComponent(
-          part.slice(i + 1).trim()
+          part
+            .slice(i + 1)
+            .trim()
         );
     }
   }
@@ -44,16 +57,22 @@ function cookies(req) {
   return out;
 }
 
-function sessionId(req, res) {
+function getSessionId(
+  req,
+  res
+) {
   let id =
-    cookies(req).pinterest_demo_session;
+    getCookies(req)
+      .pinterest_demo_session;
 
   if (
     !id ||
     !/^[a-f0-9]{48}$/.test(id)
   ) {
     id =
-      crypto.randomBytes(24).toString("hex");
+      crypto
+        .randomBytes(24)
+        .toString("hex");
 
     res.setHeader(
       "Set-Cookie",
@@ -66,17 +85,28 @@ function sessionId(req, res) {
 
 function cleanup() {
   const cutoff =
-    Date.now() - 3600000;
+    Date.now() -
+    60 * 60 * 1000;
 
-  for (const [k, v] of states) {
-    if (v.at < cutoff) {
-      states.delete(k);
+  for (
+    const [key, value]
+    of states
+  ) {
+    if (
+      value.at < cutoff
+    ) {
+      states.delete(key);
     }
   }
 
-  for (const [k, v] of sessions) {
-    if (v.at < cutoff) {
-      sessions.delete(k);
+  for (
+    const [key, value]
+    of sessions
+  ) {
+    if (
+      value.at < cutoff
+    ) {
+      sessions.delete(key);
     }
   }
 }
@@ -84,130 +114,209 @@ function cleanup() {
 function config() {
   return {
     appId:
-      process.env.PINTEREST_APP_ID || "",
+      process.env
+        .PINTEREST_APP_ID ||
+      "",
 
     secret:
-      process.env.PINTEREST_APP_SECRET || "",
+      process.env
+        .PINTEREST_APP_SECRET ||
+      "",
 
     redirectUri:
-      process.env.PINTEREST_REDIRECT_URI || "",
+      process.env
+        .PINTEREST_REDIRECT_URI ||
+      "",
   };
 }
 
-function html(
+function page(
   body,
-  title = "Pinterest API Standard Access Demo"
+  title =
+    "Pinterest API Standard Access Demo"
 ) {
   return `
 <!doctype html>
+
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1"
-  >
 
-  <title>${esc(title)}</title>
+<meta charset="utf-8">
 
-  <style>
-    body {
-      font-family:
-        system-ui,
-        -apple-system,
-        "Segoe UI",
-        sans-serif;
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
 
-      margin: 0;
-      background: #f7f7f7;
-      color: #202124;
-    }
+<title>
+  ${esc(title)}
+</title>
 
-    main {
-      max-width: 820px;
-      margin: 40px auto;
-      padding: 0 20px 48px;
-    }
+<style>
 
-    .card {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 14px;
-      padding: 24px;
-      margin: 16px 0;
-    }
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
 
-    h1 {
-      font-size: 28px;
-    }
+  margin: 0;
 
-    .row {
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-    }
+  background:
+    #f7f7f7;
 
-    .ok {
-      color: #137333;
-      font-weight: 700;
-    }
+  color:
+    #202124;
+}
 
-    .bad {
-      color: #b3261e;
-      font-weight: 700;
-    }
+main {
+  max-width:
+    820px;
 
-    .muted {
-      color: #666;
-    }
+  margin:
+    40px auto;
 
-    .button,
-    button {
-      display: inline-block;
-      background: #111;
-      color: #fff;
-      border: 0;
-      border-radius: 10px;
-      padding: 12px 18px;
-      font-weight: 700;
-      text-decoration: none;
-      cursor: pointer;
-    }
+  padding:
+    0 20px 48px;
+}
 
-    code {
-      background: #f1f3f4;
-      padding: 2px 6px;
-      border-radius: 5px;
-    }
+.card {
+  background:
+    #fff;
 
-    li,
-    p {
-      line-height: 1.55;
-    }
-  </style>
+  border:
+    1px solid #ddd;
+
+  border-radius:
+    14px;
+
+  padding:
+    24px;
+
+  margin:
+    16px 0;
+}
+
+h1 {
+  font-size:
+    28px;
+}
+
+.row {
+  padding:
+    8px 0;
+
+  border-bottom:
+    1px solid #eee;
+}
+
+.ok {
+  color:
+    #137333;
+
+  font-weight:
+    700;
+}
+
+.bad {
+  color:
+    #b3261e;
+
+  font-weight:
+    700;
+}
+
+.muted {
+  color:
+    #666;
+}
+
+.button,
+button {
+  display:
+    inline-block;
+
+  background:
+    #111;
+
+  color:
+    #fff;
+
+  border:
+    0;
+
+  border-radius:
+    10px;
+
+  padding:
+    12px 18px;
+
+  font-weight:
+    700;
+
+  text-decoration:
+    none;
+
+  cursor:
+    pointer;
+}
+
+code {
+  background:
+    #f1f3f4;
+
+  padding:
+    2px 6px;
+
+  border-radius:
+    5px;
+}
+
+li,
+p {
+  line-height:
+    1.55;
+}
+
+</style>
+
 </head>
 
 <body>
-  <main>
-    <h1>
-      Pinterest API Standard Access Demo
-    </h1>
 
-    <p class="muted">
-      Sweets Ranking Pin Tool · App ID
-      ${esc(
-        process.env.PINTEREST_APP_ID ||
-        "not configured"
-      )}
-    </p>
+<main>
 
-    ${body}
-  </main>
+<h1>
+  Pinterest API Standard Access Demo
+</h1>
+
+<p class="muted">
+
+  Sweets Ranking Pin Tool · App ID
+
+  ${
+    esc(
+      process.env
+        .PINTEREST_APP_ID ||
+      "not configured"
+    )
+  }
+
+</p>
+
+${body}
+
+</main>
+
 </body>
+
 </html>
 `;
 }
 
-function send(
+function sendHtml(
   res,
   status,
   body
@@ -229,27 +338,30 @@ function send(
   res.end(body);
 }
 
-function go(
+function redirect(
   res,
   location
 ) {
   res.writeHead(
     302,
     {
-      Location: location,
-      "Cache-Control": "no-store",
+      Location:
+        location,
+
+      "Cache-Control":
+        "no-store",
     }
   );
 
   res.end();
 }
 
-async function api(
+async function pinterestApi(
   path,
   token,
   options = {}
 ) {
-  const r =
+  const response =
     await fetch(
       `${API_BASE}${path}`,
       {
@@ -259,20 +371,25 @@ async function api(
           Authorization:
             `Bearer ${token}`,
 
-          ...(options.body
-            ? {
-                "Content-Type":
-                  "application/json",
-              }
-            : {}),
+          ...(
+            options.body
+              ? {
+                  "Content-Type":
+                    "application/json",
+                }
+              : {}
+          ),
 
-          ...(options.headers || {}),
+          ...(
+            options.headers ||
+            {}
+          ),
         },
       }
     );
 
   const text =
-    await r.text();
+    await response.text();
 
   let data = {};
 
@@ -283,24 +400,32 @@ async function api(
         : {};
   } catch {
     data = {
-      raw: text,
+      raw:
+        text,
     };
   }
 
-  if (!r.ok) {
+  if (
+    !response.ok
+  ) {
     throw new Error(
-      `Pinterest API HTTP ${r.status}: ${text}`
+      `Pinterest API HTTP ${response.status}: ${text}`
     );
   }
 
   return {
-    status: r.status,
+    status:
+      response.status,
+
     data,
   };
 }
 
-async function exchange(code) {
-  const c = config();
+async function exchangeCode(
+  code
+) {
+  const c =
+    config();
 
   const body =
     new URLSearchParams({
@@ -313,20 +438,25 @@ async function exchange(code) {
         c.redirectUri,
     });
 
-  const auth =
-    Buffer.from(
-      `${c.appId}:${c.secret}`
-    ).toString("base64");
+  const basic =
+    Buffer
+      .from(
+        `${c.appId}:${c.secret}`
+      )
+      .toString(
+        "base64"
+      );
 
-  const r =
+  const response =
     await fetch(
       `${API_BASE}/oauth/token`,
       {
-        method: "POST",
+        method:
+          "POST",
 
         headers: {
           Authorization:
-            `Basic ${auth}`,
+            `Basic ${basic}`,
 
           "Content-Type":
             "application/x-www-form-urlencoded",
@@ -338,7 +468,7 @@ async function exchange(code) {
     );
 
   const text =
-    await r.text();
+    await response.text();
 
   let data = {};
 
@@ -349,58 +479,218 @@ async function exchange(code) {
         : {};
   } catch {
     data = {
-      raw: text,
+      raw:
+        text,
     };
   }
 
   if (
-    !r.ok ||
+    !response.ok ||
     !data.access_token
   ) {
     throw new Error(
-      `Pinterest OAuth token exchange failed (${r.status}): ${text}`
+      `Pinterest OAuth token exchange failed (${response.status}): ${text}`
     );
   }
 
   return {
-    status: r.status,
+    status:
+      response.status,
+
     data,
   };
 }
 
-function home(session) {
-  const c = config();
+async function listSandboxBoards(
+  token
+) {
+  const boards = [];
+
+  let bookmark =
+    null;
+
+  let pages =
+    0;
+
+  do {
+    const params =
+      new URLSearchParams({
+        page_size:
+          "250",
+      });
+
+    if (
+      bookmark
+    ) {
+      params.set(
+        "bookmark",
+        bookmark
+      );
+    }
+
+    const result =
+      await pinterestApi(
+        `/boards?${params.toString()}`,
+        token
+      );
+
+    pages += 1;
+
+    if (
+      Array.isArray(
+        result.data.items
+      )
+    ) {
+      boards.push(
+        ...result.data.items
+      );
+    }
+
+    bookmark =
+      result.data.bookmark ||
+      null;
+
+  } while (
+    bookmark &&
+    pages < 20
+  );
+
+  return {
+    boards,
+    pages,
+  };
+}
+
+async function ensureBoard(
+  token
+) {
+  const listed =
+    await listSandboxBoards(
+      token
+    );
+
+  const existing =
+    listed.boards.find(
+      board =>
+        board.name ===
+        BOARD_NAME
+    ) ||
+    listed.boards[0];
+
+  if (
+    existing?.id
+  ) {
+    return {
+      board:
+        existing,
+
+      created:
+        false,
+
+      listPages:
+        listed.pages,
+
+      listCount:
+        listed.boards.length,
+
+      createStatus:
+        null,
+    };
+  }
+
+  const created =
+    await pinterestApi(
+      "/boards",
+      token,
+      {
+        method:
+          "POST",
+
+        body:
+          JSON.stringify({
+            name:
+              BOARD_NAME,
+
+            description:
+              "Sandbox board created through the Pinterest API for Standard Access review.",
+
+            privacy:
+              "PUBLIC",
+          }),
+      }
+    );
+
+  if (
+    !created.data?.id
+  ) {
+    throw new Error(
+      "Board creation returned no board ID."
+    );
+  }
+
+  return {
+    board:
+      created.data,
+
+    created:
+      true,
+
+    listPages:
+      listed.pages,
+
+    listCount:
+      listed.boards.length,
+
+    createStatus:
+      created.status,
+  };
+}
+
+function home(
+  session
+) {
+  const c =
+    config();
 
   const ready =
     c.appId &&
     c.secret &&
     c.redirectUri;
 
-  const auth =
+  const authSection =
     session?.token
 
       ? `
         <p class="ok">
           OAuth complete.
-          Access token received and stored server-side.
+          Access token received
+          and stored server-side.
         </p>
 
         <p>
-          Boards returned:
+          Demo board ready:
+
           <strong>
-            ${esc(
-              session.boards?.length || 0
-            )}
+            ${
+              esc(
+                session.board?.name ||
+                session.board?.id ||
+                "Yes"
+              )
+            }
           </strong>
+
         </p>
 
         <form
           method="post"
           action="/pinterest-demo/create-pin"
         >
+
           <button>
             Create demo Pin via Pinterest API
           </button>
+
         </form>
       `
 
@@ -413,8 +703,10 @@ function home(session) {
         </a>
       `;
 
-  return html(`
+  return page(
+    `
     <section class="card">
+
       <h2>
         1. Configuration
       </h2>
@@ -430,69 +722,79 @@ function home(session) {
 
           : `
             <p class="bad">
-              Set PINTEREST_APP_ID,
-              PINTEREST_APP_SECRET and
-              PINTEREST_REDIRECT_URI
-              on Render.
+              Pinterest environment variables are missing.
             </p>
           `
       }
 
       <div class="row">
+
         Scopes:
+
         <code>
           ${esc(SCOPES)}
         </code>
+
       </div>
 
       <div class="row">
+
         API:
+
         <code>
           ${esc(API_BASE)}
         </code>
+
       </div>
+
     </section>
 
+
     <section class="card">
+
       <h2>
         2. OAuth + API integration
       </h2>
 
-      ${auth}
+      ${authSection}
+
     </section>
-  `);
+    `
+  );
 }
 
 async function handlePinterestDemo(
   req,
   res,
-  { getProducts }
+  {
+    getProducts,
+  }
 ) {
   cleanup();
 
   const url =
     new URL(
       req.url,
-      `https://${
-        req.headers.host ||
-        "localhost"
-      }`
+      `https://${req.headers.host || "localhost"}`
     );
 
   const path =
     url.pathname;
 
+
   if (
-    path === "/pinterest-demo" &&
-    req.method === "GET"
+    path ===
+      "/pinterest-demo" &&
+    req.method ===
+      "GET"
   ) {
     const id =
-      sessionId(
+      getSessionId(
         req,
         res
       );
 
-    send(
+    sendHtml(
       res,
       200,
       home(
@@ -503,9 +805,12 @@ async function handlePinterestDemo(
     return true;
   }
 
+
   if (
-    path === "/auth/pinterest" &&
-    req.method === "GET"
+    path ===
+      "/auth/pinterest" &&
+    req.method ===
+      "GET"
   ) {
     const c =
       config();
@@ -515,11 +820,13 @@ async function handlePinterestDemo(
       !c.secret ||
       !c.redirectUri
     ) {
-      send(
+      sendHtml(
         res,
         500,
-        html(`
+        page(
+          `
           <section class="card">
+
             <h2>
               Configuration missing
             </h2>
@@ -528,15 +835,17 @@ async function handlePinterestDemo(
               Pinterest environment variables
               are not configured.
             </p>
+
           </section>
-        `)
+          `
+        )
       );
 
       return true;
     }
 
     const id =
-      sessionId(
+      getSessionId(
         req,
         res
       );
@@ -550,11 +859,12 @@ async function handlePinterestDemo(
       state,
       {
         id,
-        at: Date.now(),
+        at:
+          Date.now(),
       }
     );
 
-    const q =
+    const params =
       new URLSearchParams({
         client_id:
           c.appId,
@@ -571,21 +881,23 @@ async function handlePinterestDemo(
         state,
       });
 
-    go(
+    redirect(
       res,
-      `${OAUTH_URL}?${q.toString()}`
+      `${OAUTH_URL}?${params.toString()}`
     );
 
     return true;
   }
 
+
   if (
     path ===
       "/auth/pinterest/callback" &&
-    req.method === "GET"
+    req.method ===
+      "GET"
   ) {
     const id =
-      sessionId(
+      getSessionId(
         req,
         res
       );
@@ -611,11 +923,13 @@ async function handlePinterestDemo(
       !expected ||
       expected.id !== id
     ) {
-      send(
+      sendHtml(
         res,
         400,
-        html(`
+        page(
+          `
           <section class="card">
+
             <h2>
               OAuth validation failed
             </h2>
@@ -624,184 +938,279 @@ async function handlePinterestDemo(
               Missing or invalid
               authorization code/state.
             </p>
+
           </section>
-        `)
+          `
+        )
       );
 
       return true;
     }
 
-    states.delete(state);
+    states.delete(
+      state
+    );
 
     try {
-      const token =
-        await exchange(code);
-
-      const boardsResult =
-        await api(
-          "/boards?page_size=100",
-          token.data.access_token
+      const tokenResult =
+        await exchangeCode(
+          code
         );
 
-      const boards =
-        Array.isArray(
-          boardsResult.data.items
-        )
-          ? boardsResult.data.items
-          : [];
+      const boardResult =
+        await ensureBoard(
+          tokenResult
+            .data
+            .access_token
+        );
 
       sessions.set(
         id,
         {
           token:
-            token.data.access_token,
+            tokenResult
+              .data
+              .access_token,
 
-          boards,
+          board:
+            boardResult.board,
 
           at:
             Date.now(),
         }
       );
 
-      const list =
-        boards
-          .slice(0, 10)
-          .map(
-            b =>
-              `
-                <li>
-                  ${esc(
-                    b.name ||
-                    "Unnamed board"
-                  )}
+      const boardStep =
+        boardResult.created
 
-                  <span class="muted">
-                    (${esc(
-                      b.id || ""
-                    )})
-                  </span>
-                </li>
-              `
-          )
-          .join("") ||
-        "<li>No boards returned.</li>";
+          ? `
+            <div class="row">
 
-      send(
+              <span class="ok">
+                ✓
+              </span>
+
+              <code>
+                POST /v5/boards
+              </code>
+
+              → HTTP
+              ${
+                esc(
+                  boardResult
+                    .createStatus
+                )
+              }
+
+            </div>
+
+            <div class="row">
+
+              Sandbox demo board created:
+
+              <strong>
+                ${
+                  esc(
+                    boardResult
+                      .board
+                      .name ||
+                    boardResult
+                      .board
+                      .id
+                  )
+                }
+              </strong>
+
+            </div>
+          `
+
+          : `
+            <div class="row">
+
+              <span class="ok">
+                ✓
+              </span>
+
+              Sandbox board found after
+              ${
+                esc(
+                  boardResult
+                    .listPages
+                )
+              }
+              page(s)
+
+            </div>
+
+            <div class="row">
+
+              Board:
+
+              <strong>
+                ${
+                  esc(
+                    boardResult
+                      .board
+                      .name ||
+                    boardResult
+                      .board
+                      .id
+                  )
+                }
+              </strong>
+
+            </div>
+          `;
+
+      sendHtml(
         res,
         200,
-        html(
+        page(
           `
-            <section class="card">
-              <h2>
-                OAuth flow complete
-              </h2>
+          <section class="card">
 
-              <div class="row">
-                <span class="ok">
-                  ✓
-                </span>
+            <h2>
+              OAuth flow complete
+            </h2>
 
-                Authorization code received
-              </div>
+            <div class="row">
 
-              <div class="row">
-                <span class="ok">
-                  ✓
-                </span>
+              <span class="ok">
+                ✓
+              </span>
 
-                OAuth state verified
-              </div>
+              Authorization code received
 
-              <div class="row">
-                <span class="ok">
-                  ✓
-                </span>
+            </div>
 
-                <code>
-                  POST /v5/oauth/token
-                </code>
+            <div class="row">
 
-                → HTTP
-                ${esc(
-                  token.status
-                )}
-              </div>
+              <span class="ok">
+                ✓
+              </span>
 
-              <div class="row">
-                <span class="ok">
-                  ✓
-                </span>
+              OAuth state verified
 
-                Access token received
-                (hidden)
-              </div>
-            </section>
+            </div>
 
-            <section class="card">
-              <h2>
-                Live Pinterest API integration
-              </h2>
+            <div class="row">
 
-              <div class="row">
-                <span class="ok">
-                  ✓
-                </span>
+              <span class="ok">
+                ✓
+              </span>
 
-                <code>
-                  GET /v5/boards
-                </code>
+              <code>
+                POST /v5/oauth/token
+              </code>
 
-                → HTTP
-                ${esc(
-                  boardsResult.status
-                )}
-              </div>
+              → HTTP
+              ${
+                esc(
+                  tokenResult.status
+                )
+              }
 
-              <ul>
-                ${list}
-              </ul>
+            </div>
 
-              <form
-                method="post"
-                action="/pinterest-demo/create-pin"
-              >
-                <button>
-                  Create demo Pin via POST /v5/pins
-                </button>
-              </form>
-            </section>
+            <div class="row">
+
+              <span class="ok">
+                ✓
+              </span>
+
+              Access token received
+              (hidden)
+
+            </div>
+
+          </section>
+
+
+          <section class="card">
+
+            <h2>
+              Live Pinterest API integration
+            </h2>
+
+            <div class="row">
+
+              <span class="ok">
+                ✓
+              </span>
+
+              <code>
+                GET /v5/boards
+              </code>
+
+              → searched
+              ${
+                esc(
+                  boardResult
+                    .listPages
+                )
+              }
+              page(s)
+
+            </div>
+
+            ${boardStep}
+
+            <form
+              method="post"
+              action="/pinterest-demo/create-pin"
+            >
+
+              <button>
+                Create demo Pin via POST /v5/pins
+              </button>
+
+            </form>
+
+          </section>
           `,
           "Pinterest OAuth complete"
         )
       );
-    } catch (e) {
-      send(
+    } catch (
+      error
+    ) {
+      sendHtml(
         res,
         500,
-        html(`
+        page(
+          `
           <section class="card">
+
             <h2>
               OAuth/API error
             </h2>
 
             <p class="bad">
-              ${esc(e.message)}
+              ${
+                esc(
+                  error.message
+                )
+              }
             </p>
+
           </section>
-        `)
+          `
+        )
       );
     }
 
     return true;
   }
 
+
   if (
     path ===
       "/pinterest-demo/create-pin" &&
-    req.method === "POST"
+    req.method ===
+      "POST"
   ) {
     const id =
-      sessionId(
+      getSessionId(
         req,
         res
       );
@@ -809,12 +1218,16 @@ async function handlePinterestDemo(
     const session =
       sessions.get(id);
 
-    if (!session?.token) {
-      send(
+    if (
+      !session?.token
+    ) {
+      sendHtml(
         res,
         401,
-        html(`
+        page(
+          `
           <section class="card">
+
             <h2>
               OAuth required
             </h2>
@@ -825,38 +1238,50 @@ async function handlePinterestDemo(
             >
               Start demo
             </a>
+
           </section>
-        `)
+          `
+        )
       );
 
       return true;
     }
 
     try {
-      const board =
-        session.boards.find(
-          b =>
-            b.name ===
-            BOARD_NAME
-        ) ||
-        session.boards[0];
+      let board =
+        session.board;
 
-      if (!board?.id) {
-        throw new Error(
-          "No Pinterest board is available for the demo Pin."
-        );
+      if (
+        !board?.id
+      ) {
+        const boardResult =
+          await ensureBoard(
+            session.token
+          );
+
+        board =
+          boardResult.board;
+
+        session.board =
+          board;
       }
 
       const ranking =
         await getProducts();
 
       const product =
-        ranking.products.find(
-          p => p.image
-        ) ||
-        ranking.products[0];
+        ranking
+          .products
+          .find(
+            product =>
+              product.image
+          ) ||
+        ranking
+          .products[0];
 
-      if (!product?.image) {
+      if (
+        !product?.image
+      ) {
         throw new Error(
           "No Rakuten product image is available for the demo Pin."
         );
@@ -864,13 +1289,18 @@ async function handlePinterestDemo(
 
       const payload = {
         board_id:
-          String(board.id),
+          String(
+            board.id
+          ),
 
         title:
           `楽天スイーツ API Demo | ${
             String(
               product.name
-            ).slice(0, 70)
+            ).slice(
+              0,
+              70
+            )
           }`,
 
         description:
@@ -891,8 +1321,8 @@ async function handlePinterestDemo(
         },
       };
 
-      const pin =
-        await api(
+      const pinResult =
+        await pinterestApi(
           "/pins",
           session.token,
           {
@@ -910,90 +1340,122 @@ async function handlePinterestDemo(
         Date.now();
 
       const pinId =
-        pin.data.id || "";
+        pinResult
+          .data
+          .id ||
+        "";
 
       const pinUrl =
         pinId
-          ? `https://www.pinterest.com/pin/${encodeURIComponent(
-              pinId
-            )}/`
+
+          ? `https://www.pinterest.com/pin/${encodeURIComponent(pinId)}/`
+
           : "https://www.pinterest.com/";
 
-      send(
+      sendHtml(
         res,
         201,
-        html(
+        page(
           `
-            <section class="card">
-              <h2>
-                Live API action completed
-              </h2>
+          <section class="card">
 
-              <div class="row">
-                <span class="ok">
-                  ✓
-                </span>
+            <h2>
+              Live API action completed
+            </h2>
 
-                <code>
-                  POST /v5/pins
-                </code>
+            <div class="row">
 
-                → HTTP
-                ${esc(
-                  pin.status
-                )}
-              </div>
+              <span class="ok">
+                ✓
+              </span>
 
-              <div class="row">
-                Board:
-                <strong>
-                  ${esc(
+              <code>
+                POST /v5/pins
+              </code>
+
+              → HTTP
+              ${
+                esc(
+                  pinResult.status
+                )
+              }
+
+            </div>
+
+            <div class="row">
+
+              Board:
+
+              <strong>
+                ${
+                  esc(
                     board.name ||
                     board.id
-                  )}
-                </strong>
-              </div>
+                  )
+                }
+              </strong>
 
-              <div class="row">
-                Created Pin ID:
-                <code>
-                  ${esc(pinId)}
-                </code>
-              </div>
+            </div>
 
-              <p class="ok">
-                The Pin was created
-                through the Pinterest API.
-              </p>
+            <div class="row">
 
-              <a
-                class="button"
-                href="${esc(pinUrl)}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open the resulting Pin on Pinterest
-              </a>
-            </section>
+              Created Pin ID:
+
+              <code>
+                ${esc(pinId)}
+              </code>
+
+            </div>
+
+            <p class="ok">
+
+              The Pin was created
+              through the Pinterest API.
+
+            </p>
+
+            <a
+              class="button"
+              href="${esc(pinUrl)}"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+
+              Open the resulting Pin on Pinterest
+
+            </a>
+
+          </section>
           `,
           "Pinterest Pin created"
         )
       );
-    } catch (e) {
-      send(
+
+    } catch (
+      error
+    ) {
+      sendHtml(
         res,
         500,
-        html(`
+        page(
+          `
           <section class="card">
+
             <h2>
               Pin creation failed
             </h2>
 
             <p class="bad">
-              ${esc(e.message)}
+              ${
+                esc(
+                  error.message
+                )
+              }
             </p>
+
           </section>
-        `)
+          `
+        )
       );
     }
 
