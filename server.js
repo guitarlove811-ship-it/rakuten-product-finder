@@ -125,10 +125,7 @@ async function getProducts() {
         item =>
           item &&
           item.itemName &&
-          (
-            item.affiliateUrl ||
-            item.itemUrl
-          )
+          item.affiliateUrl
       )
 
       // ★ここでランキング順に並べ直す
@@ -166,7 +163,6 @@ async function getProducts() {
 
           url:
             item.affiliateUrl ||
-            item.itemUrl ||
             "",
 
           image:

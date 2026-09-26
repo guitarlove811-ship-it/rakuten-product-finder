@@ -6,12 +6,8 @@ const SCOPES =
   "boards:read,boards:write,pins:read,pins:write";
 
 const BOARD_NAME =
-  process.env.PINTEREST_DEMO_BOARD_NAME ||
-  "Pinterest API Sandbox Demo";
-
-const DEMO_LINK =
-  process.env.PINTEREST_DEMO_LINK ||
-  "https://guitarlove811-ship-it.github.io/rakuten-product-finder/";
+  process.env.PINTEREST_BOARD_NAME ||
+  "楽天スイーツランキング";
 
 const API_BASE =
   process.env.PINTEREST_API_ENV === "sandbox"
@@ -574,8 +570,7 @@ async function ensureBoard(
       board =>
         board.name ===
         BOARD_NAME
-    ) ||
-    listed.boards[0];
+    );
 
   if (
     existing?.id
@@ -612,7 +607,7 @@ async function ensureBoard(
               BOARD_NAME,
 
             description:
-              "Sandbox board created through the Pinterest API for Standard Access review.",
+              "楽天市場のスイーツ・お菓子ランキングから、お取り寄せ商品を紹介するボードです。",
 
             privacy:
               "PUBLIC",
@@ -668,7 +663,7 @@ function home(
         </p>
 
         <p>
-          Demo board ready:
+          投稿先ボード:
 
           <strong>
             ${
@@ -688,7 +683,7 @@ function home(
         >
 
           <button>
-            Create demo Pin via Pinterest API
+            楽天スイーツ1位をPinterestへ投稿
           </button>
 
         </form>
@@ -1274,16 +1269,15 @@ async function handlePinterestDemo(
           .products
           .find(
             product =>
-              product.image
-          ) ||
-        ranking
-          .products[0];
+              product.image &&
+              product.url
+          );
 
       if (
         !product?.image
       ) {
         throw new Error(
-          "No Rakuten product image is available for the demo Pin."
+          "No Rakuten product with both an image and affiliate URL is available."
         );
       }
 
@@ -1294,20 +1288,18 @@ async function handlePinterestDemo(
           ),
 
         title:
-          `楽天スイーツ API Demo | ${
-            String(
-              product.name
-            ).slice(
-              0,
-              70
-            )
-          }`,
+          `${product.rank ? `${product.rank}位 ` : ""}${String(product.name)}`.slice(0, 100),
 
         description:
-          "Created through the Pinterest API as a live integration demonstration for Standard Access review.",
+          [
+            "PR｜楽天市場の商品を紹介しています。",
+            product.rank ? `楽天スイーツランキング ${product.rank}位。` : "",
+            product.catchcopy ? String(product.catchcopy).slice(0, 250) : "",
+            product.shopName ? `ショップ: ${product.shopName}` : "",
+          ].filter(Boolean).join(" ").slice(0, 500),
 
         link:
-          DEMO_LINK,
+          product.url,
 
         media_source: {
           source_type:
