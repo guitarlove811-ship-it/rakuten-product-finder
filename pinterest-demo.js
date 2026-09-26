@@ -683,7 +683,7 @@ function home(
         >
 
           <button>
-            楽天スイーツ1位をPinterestへ投稿
+            楽天スイーツ上位商品1件をPinterestへ投稿
           </button>
 
         </form>
