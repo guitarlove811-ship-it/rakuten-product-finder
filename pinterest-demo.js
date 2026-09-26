@@ -1,5 +1,9 @@
 const crypto = require("crypto");
 
+const GITHUB_OIDC_ISSUER = "https://token.actions.githubusercontent.com";
+const GITHUB_OIDC_AUDIENCE = "pinterest-daily";
+const GITHUB_REPOSITORY = "guitarlove811-ship-it/rakuten-product-finder";
+
 const OAUTH_URL = "https://www.pinterest.com/oauth/";
 
 const SCOPES =
@@ -522,6 +526,36 @@ async function getClientCredentialsToken() {
   return { status: response.status, data };
 }
 
+function decodeBase64Url(value) {
+  return Buffer.from(String(value).replace(/-/g, "+").replace(/_/g, "/"), "base64");
+}
+
+async function verifyGitHubOidc(req) {
+  const auth = String(req.headers.authorization || "");
+  if (!auth.startsWith("Bearer ")) throw new Error("Unauthorized: missing bearer token");
+  const jwt = auth.slice(7);
+  const parts = jwt.split(".");
+  if (parts.length !== 3) throw new Error("Unauthorized: invalid JWT");
+  const header = JSON.parse(decodeBase64Url(parts[0]).toString("utf8"));
+  const claims = JSON.parse(decodeBase64Url(parts[1]).toString("utf8"));
+  if (header.alg !== "RS256" || !header.kid) throw new Error("Unauthorized: unsupported JWT");
+  const configResponse = await fetch(`${GITHUB_OIDC_ISSUER}/.well-known/openid-configuration`);
+  const oidcConfig = await configResponse.json();
+  const jwksResponse = await fetch(oidcConfig.jwks_uri);
+  const jwks = await jwksResponse.json();
+  const jwk = (jwks.keys || []).find(key => key.kid === header.kid);
+  if (!jwk) throw new Error("Unauthorized: signing key not found");
+  const key = crypto.createPublicKey({ key: jwk, format: "jwk" });
+  const valid = crypto.verify("RSA-SHA256", Buffer.from(`${parts[0]}.${parts[1]}`), key, decodeBase64Url(parts[2]));
+  if (!valid) throw new Error("Unauthorized: invalid signature");
+  const now = Math.floor(Date.now() / 1000);
+  const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (claims.iss !== GITHUB_OIDC_ISSUER || !aud.includes(GITHUB_OIDC_AUDIENCE)) throw new Error("Unauthorized: invalid issuer/audience");
+  if (!claims.exp || claims.exp < now || (claims.nbf && claims.nbf > now + 60)) throw new Error("Unauthorized: expired/not-yet-valid token");
+  if (claims.repository !== GITHUB_REPOSITORY || claims.ref !== "refs/heads/main") throw new Error("Unauthorized: repository/ref mismatch");
+  return claims;
+}
+
 async function listSandboxBoards(
   token
 ) {
@@ -664,6 +698,69 @@ async function ensureBoard(
     createStatus:
       created.status,
   };
+}
+
+function tokyoDate(value = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(value));
+}
+
+async function listBoardPins(token, boardId) {
+  const pins = [];
+  let bookmark = null;
+  let pages = 0;
+  do {
+    const params = new URLSearchParams({ page_size: "250" });
+    if (bookmark) params.set("bookmark", bookmark);
+    const result = await pinterestApi(`/boards/${encodeURIComponent(boardId)}/pins?${params.toString()}`, token);
+    if (Array.isArray(result.data.items)) pins.push(...result.data.items);
+    bookmark = result.data.bookmark || null;
+    pages += 1;
+  } while (bookmark && pages < 10);
+  return pins;
+}
+
+function buildPinPayload(board, product) {
+  return {
+    board_id: String(board.id),
+    title: `${product.rank ? `${product.rank}位 ` : ""}${String(product.name)}`.slice(0, 100),
+    description: [
+      "PR｜楽天市場の商品を紹介しています。",
+      product.rank ? `楽天スイーツランキング ${product.rank}位。` : "",
+      product.catchcopy ? String(product.catchcopy).slice(0, 250) : "",
+      product.shopName ? `ショップ: ${product.shopName}` : "",
+    ].filter(Boolean).join(" ").slice(0, 500),
+    link: product.url,
+    media_source: { source_type: "image_url", url: product.image, is_standard: true },
+  };
+}
+
+async function createDailyAffiliatePin(token, getProducts) {
+  const boardResult = await ensureBoard(token);
+  const board = boardResult.board;
+  const existingPins = await listBoardPins(token, board.id);
+  const today = tokyoDate();
+  const postedToday = existingPins.find(pin => pin.created_at && tokyoDate(pin.created_at) === today);
+  if (postedToday) {
+    return { status: "skipped", reason: "already_posted_today", board, pin: postedToday };
+  }
+
+  const usedLinks = new Set(existingPins.map(pin => String(pin.link || "")).filter(Boolean));
+  const usedTitles = new Set(existingPins.map(pin => String(pin.title || "")).filter(Boolean));
+  const ranking = await getProducts();
+  const product = ranking.products.find(item => {
+    if (!item?.image || !item?.url) return false;
+    const title = `${item.rank ? `${item.rank}位 ` : ""}${String(item.name)}`.slice(0, 100);
+    return !usedLinks.has(String(item.url)) && !usedTitles.has(title);
+  });
+  if (!product) throw new Error("No unposted Rakuten product with image and affiliate URL is available.");
+  const payload = buildPinPayload(board, product);
+  const pinResult = await pinterestApi("/pins", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return { status: "posted", board, product, pin: pinResult.data, httpStatus: pinResult.status };
 }
 
 function home(
@@ -845,6 +942,34 @@ async function handlePinterestDemo(
       `, "Pinterest automation check"));
     } catch (error) {
       sendHtml(res, 500, page(`<section class="card"><h2>Automation credential check failed</h2><p class="bad">${esc(error.message)}</p></section>`));
+    }
+    return true;
+  }
+
+  if (
+    path === "/pinterest-auto/run" &&
+    req.method === "POST"
+  ) {
+    try {
+      await verifyGitHubOidc(req);
+      const token = await getClientCredentialsToken();
+      const result = await createDailyAffiliatePin(token.data.access_token, getProducts);
+      const detail = result.status === "posted"
+        ? `Posted Pin ID: ${esc(result.pin?.id || "unknown")}`
+        : `Skipped: ${esc(result.reason)}`;
+      sendHtml(res, 200, page(`
+        <section class="card">
+          <h2>Daily Pinterest automation</h2>
+          <div class="row"><span class="ok">✓</span> GitHub OIDC verified</div>
+          <div class="row"><span class="ok">✓</span> Client credentials verified</div>
+          <div class="row">${detail}</div>
+        </section>
+      `, "Pinterest daily automation"));
+    } catch (error) {
+      const unauthorized = String(error.message || "").startsWith("Unauthorized:");
+      sendHtml(res, unauthorized ? 401 : 500, page(`
+        <section class="card"><h2>Daily Pinterest automation failed</h2><p class="bad">${esc(error.message)}</p></section>
+      `, "Pinterest daily automation failed"));
     }
     return true;
   }
