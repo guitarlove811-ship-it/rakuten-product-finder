@@ -497,6 +497,31 @@ async function exchangeCode(
   };
 }
 
+async function getClientCredentialsToken() {
+  const c = config();
+  const basic = Buffer.from(`${c.appId}:${c.secret}`).toString("base64");
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    scope: SCOPES,
+  });
+  const response = await fetch(`${API_BASE}/oauth/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basic}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+  const text = await response.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { data = { raw: text }; }
+  if (!response.ok || !data.access_token) {
+    throw new Error(`Pinterest client credentials failed (${response.status}): ${text}`);
+  }
+  return { status: response.status, data };
+}
+
 async function listSandboxBoards(
   token
 ) {
@@ -800,6 +825,29 @@ async function handlePinterestDemo(
     return true;
   }
 
+
+  if (
+    path === "/pinterest-auto/status" &&
+    req.method === "GET"
+  ) {
+    try {
+      const token = await getClientCredentialsToken();
+      const scopes = String(token.data.scope || "");
+      const boards = await pinterestApi("/boards?page_size=1", token.data.access_token);
+      sendHtml(res, 200, page(`
+        <section class="card">
+          <h2>Automation credential check</h2>
+          <div class="row"><span class="ok">✓</span> Client credentials → HTTP ${esc(token.status)}</div>
+          <div class="row">Scopes: <code>${esc(scopes)}</code></div>
+          <div class="row"><span class="ok">✓</span> GET /v5/boards → HTTP ${esc(boards.status)}</div>
+          <p class="ok">No Pin was created by this check.</p>
+        </section>
+      `, "Pinterest automation check"));
+    } catch (error) {
+      sendHtml(res, 500, page(`<section class="card"><h2>Automation credential check failed</h2><p class="bad">${esc(error.message)}</p></section>`));
+    }
+    return true;
+  }
 
   if (
     path ===
